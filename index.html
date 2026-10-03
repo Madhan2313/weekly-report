@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Weekly Report Manager</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --border:#e2e8f0; --text:#1e293b;
+    --muted:#64748b; --primary:#2563eb; --primary-dark:#1d4ed8;
+    --green:#16a34a; --red:#dc2626; --amber:#d97706;
+    --shadow:0 1px 3px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 20px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:36px;height:36px;border-radius:8px;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:700}
+  .brand h1{font-size:16px;margin:0}
+  .brand small{color:var(--muted);display:block}
+  .user-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:#dbeafe;color:#1e40af;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer}
+  .user-badge:hover{background:#bfdbfe}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--border);background:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px}
+  .tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .tab.hidden-tab{display:none}
+  .tab.hidden-tab.revealed{display:inline-block}
+  main{padding:20px;max-width:1400px;margin:0 auto}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:16px;margin-bottom:20px}
+  .card h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+  .toolbar input,.toolbar select{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff}
+  .btn{padding:8px 14px;border:1px solid var(--border);background:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500}
+  .btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .btn.primary:hover{background:var(--primary-dark)}
+  .btn.danger{color:var(--red);border-color:#fecaca}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+  .btn:hover{opacity:.92}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+  th{background:#f8fafc;font-weight:600;color:var(--muted);white-space:nowrap;position:sticky;top:0}
+  tr:hover td{background:#f8fafc}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .total-row td{font-weight:700;background:#eff6ff;border-top:2px solid var(--primary)}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600}
+  .pill.ongoing{background:#fef3c7;color:#92400e}
+  .pill.completed{background:#dcfce7;color:#166534}
+  .pill.pending{background:#fee2e2;color:#991b1b}
+  .pill.new{background:#dbeafe;color:#1e40af}
+  .pill.routine{background:#f1f5f9;color:#475569}
+  .pill.add{background:#dcfce7;color:#166534}
+  .pill.edit{background:#dbeafe;color:#1e40af}
+  .pill.delete{background:#fee2e2;color:#991b1b}
+  .actions{display:flex;gap:4px}
+  .icon-btn{border:none;background:transparent;cursor:pointer;padding:4px 6px;border-radius:6px;font-size:14px}
+  .icon-btn:hover{background:#f1f5f9}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.55);display:grid;place-items:center;z-index:100;padding:16px}
+  .modal-backdrop[hidden]{display:none !important}
+  .modal{background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)}
+  .modal-head h2{margin:0;font-size:16px}
+  .modal-body{padding:16px 20px;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .modal-body .full{grid-column:1/-1}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600}
+  .field input,.field select,.field textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid #bfdbfe;border-color:var(--primary)}
+  .modal-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+  .toast{position:fixed;bottom:20px;right:20px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;z-index:200;box-shadow:0 10px 30px rgba(0,0,0,.3);max-width:360px}
+  .empty{padding:24px;text-align:center;color:var(--muted)}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+  .stat{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px}
+  .stat .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .stat .val{font-size:22px;font-weight:700;margin-top:4px}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px}
+  .hint code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:11px}
+
+  .net-status{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600;transition:all .3s;border:1px solid transparent;white-space:nowrap}
+  .net-status .dot{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px rgba(0,0,0,.04);animation:pulse 2s infinite}
+  .net-status.online{background:#dcfce7;color:#166534;border-color:#86efac}
+  .net-status.offline{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+  .net-status.syncing{background:#dbeafe;color:#1e40af;border-color:#93c5fd}
+  .net-status.pending{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+  .net-status.realtime{background:#ede9fe;color:#6d28d9;border-color:#c4b5fd}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  .save-indicator{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-left:6px}
+  .save-indicator.saved{background:#dcfce7;color:#166534}
+  .save-indicator.saving{background:#dbeafe;color:#1e40af}
+  .save-indicator.error{background:#fee2e2;color:#991b1b}
+  .save-indicator.pending{background:#fef3c7;color:#92400e}
+
+  .unlock-badge{position:fixed;bottom:20px;left:20px;background:#dcfce7;color:#166534;border:1px solid #86efac;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:600;z-index:150;display:none;animation:slideIn 0.3s ease}
+  .unlock-badge.show{display:inline-flex;align-items:center;gap:6px}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+
+  /* USER LOGIN MODAL */
+  .user-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.75);display:grid;place-items:center;z-index:300;padding:16px;backdrop-filter:blur(4px)}
+  .user-modal-backdrop[hidden]{display:none !important}
+  .user-modal{background:#fff;border-radius:16px;max-width:420px;width:100%;padding:32px 28px;box-shadow:0 25px 60px rgba(0,0,0,.4);text-align:center}
+  .user-modal .icon-circle{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;display:grid;place-items:center;font-size:28px;margin:0 auto 16px}
+  .user-modal h2{margin:0 0 24px;font-size:22px;font-weight:700}
+  .user-modal .field{text-align:left;margin-bottom:16px}
+  .user-modal .field label{display:block;font-size:13px;color:var(--text);margin-bottom:6px;font-weight:600}
+  .user-modal .field input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:#f8fafc}
+  .user-modal .field input:focus{outline:2px solid #bfdbfe;border-color:var(--primary);background:#fff}
+  .user-modal .field input::placeholder{color:#94a3b8}
+  .user-modal .btn-continue{width:100%;padding:13px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px}
+  .user-modal .btn-continue:hover{opacity:.92}
+  .user-modal .error-msg{color:var(--red);font-size:12px;margin-top:6px;text-align:left;display:none}
+  .user-modal .error-msg.show{display:block}
+
+  @media(max-width:700px){.modal-body{grid-template-columns:1fr}th,td{font-size:12px}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">WR</span>
+    <div>
+      <h1>Weekly Report Manager</h1>
+      <small id="lastUpdated">Loading…
+        <span class="save-indicator" id="saveIndicator" style="display:none;"></span>
+      </small>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <span class="user-badge" id="userBadge" title="Click to change user" style="display:none;">
+      👤 <span id="userNameDisplay">-</span>
+    </span>
+    <div class="net-status" id="netStatus">
+      <span class="dot"></span>
+      <span class="label">Checking…</span>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="summary">Summary</button>
+    <button class="tab" data-tab="marketing">Marketing</button>
+    <button class="tab" data-tab="ea">Editorial Assistance</button>
+    <button class="tab" data-tab="reports">Reports &amp; Export</button>
+    <button class="tab hidden-tab" data-tab="changelog" id="tab-changelog">📝 Change Log</button>
+    <button class="tab hidden-tab" data-tab="cloud" id="tab-cloud">Cloud</button>
+    <button class="tab hidden-tab" data-tab="settings" id="tab-settings">Settings</button>
+  </nav>
+</header>
+
+<main id="view"><p class="empty">Loading…</p></main>
+
+<div class="unlock-badge" id="unlockBadge">
+  🔓 Admin mode ON — Change Log, Cloud &amp; Settings visible
+</div>
+
+<!-- USER LOGIN POPUP (CLEAN VERSION) -->
+<div class="user-modal-backdrop" id="userModalBackdrop" hidden>
+  <div class="user-modal">
+    <div class="icon-circle">👤</div>
+    <h2>Welcome 👋</h2>
+    <div class="field">
+      <label for="inputUserName">Your Name *</label>
+      <input type="text" id="inputUserName" placeholder="Enter your name" autocomplete="name" />
+    </div>
+    <div class="field">
+      <label for="inputUserEmail">Your Email *</label>
+      <input type="email" id="inputUserEmail" placeholder="Enter your email" autocomplete="email" />
+    </div>
+    <div class="error-msg" id="userError">Please fill both fields correctly.</div>
+    <button class="btn-continue" id="btnContinue">Continue →</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h2 id="modalTitle">Edit</h2>
+      <button class="icon-btn" id="modalClose" type="button">✕</button>
+    </div>
+    <form id="modalForm" class="modal-body" autocomplete="off"></form>
+    <div class="modal-foot">
+      <button class="btn ghost" id="modalCancel" type="button">Cancel</button>
+      <button class="btn primary" id="modalSave" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script>
+/* =========================================================================
+   WEEKLY REPORT MANAGER — with User Login + Change Tracking
+   ========================================================================= */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDdessAo3gWG40yq5-8ZV614UAhkOcfv0Q",
+  authDomain: "weekly-report-83c81.firebaseapp.com",
+  databaseURL: "https://weekly-report-83c81-default-rtdb.firebaseio.com",
+  projectId: "weekly-report-83c81",
+  storageBucket: "weekly-report-83c81.firebasestorage.app",
+  messagingSenderId: "347308277235",
+  appId: "1:347308277235:web:67d32c6d88822e41e9e686",
+  measurementId: "G-F5YF54DXCB"
+};
+
+const DEFAULT_DATA = {
+  summary: {
+    marketing: [
+      {sno:1, task:'JPA India', type:'Routine', dateReceived:'', deadline:'', status:'Ongoing', taskType:'Data Extraction & Email', remarks:''},
+      {sno:2, task:'JPA Singapore', type:'Routine', dateReceived:'', deadline:'', status:'Ongoing', taskType:'Data Extraction & Email', remarks:''},
+      {sno:3, task:'Twitter Ads', type:'Routine', dateReceived:'', deadline:'', status:'Ongoing', taskType:'Data Extractio & Banners', remarks:''},
+      {sno:4, task:'Twitter Ads-Resharing (Books)', type:'Routine', dateReceived:'', deadline:'', status:'Ongoing', taskType:'Data Extraction & Email', remarks:''},
+      {sno:5, task:'Twitter Ads-Resharing (journals)', type:'Routine', dateReceived:'', deadline:'', status:'Ongoing', taskType:'Data Extraction & Email', remarks:''},
+      {sno:6, task:'Open Access', type:'Routine', dateReceived:'', deadline:'', status:'Ongoing', taskType:'Data Extraction & Email', remarks:''},
+      {sno:7, task:'Special issue contributors (M3AS)', type:'Routine', dateReceived:'', deadline:'', status:'Ongoing', taskType:'Data Extraction', remarks:''},
+      {sno:8, task:'Social Media Spotlight', type:'Routine', dateReceived:'', deadline:'', status:'Ongoing', taskType:'Data Extraction & Email', remarks:''},
+      {sno:9, task:'Preparing Banner and writeup for Social media spotlight', type:'Routine', dateReceived:'', deadline:'', status:'Ongoing', taskType:'Data Extraction & Banners', remarks:''},
+      {sno:10, task:'Journals cluster grouping task for Munkit', type:'New Task', dateReceived:'2026-07-09', deadline:'2026-08-30', status:'Ongoing', taskType:'Data Extraction', remarks:''},
+      {sno:11, task:'Dimension for FML Journal', type:'New Task', dateReceived:'2026-07-06', deadline:'2026-07-15', status:'Completed', taskType:'Data Extraction', remarks:''},
+      {sno:12, task:'Request to collect the Network of Authors References of Biomineralization', type:'New Task', dateReceived:'2026-07-08', deadline:'2026-07-20', status:'Ongoing', taskType:'Data Extraction', remarks:'Batch 1'},
+      {sno:13, task:'Research network of IJAM contributors', type:'New Task', dateReceived:'2026-07-08', deadline:'2026-09-15', status:'Ongoing', taskType:'Data Extraction', remarks:''}
+    ],
+    editorial: [
+      {sno:1, task:'Acquisition Research Request (Top Journal Customers)', type:'New Task', dateReceived:'2026-06-10', deadline:'', status:'Ongoing', taskType:'Data Extraction', remarks:'Batch 4'},
+      {sno:2, task:'Dimensions report - Journal Authors Network', type:'Routine', dateReceived:'', deadline:'', status:'Ongoing', taskType:'Data Extraction', remarks:''},
+      {sno:3, task:'Acquisition Research - Materials Science depart', type:'New Task', dateReceived:'2026-07-08', deadline:'', status:'Ongoing', taskType:'Data Extraction', remarks:''}
+    ]
+  },
+  marketing: {
+    sales: [
+      {team:'Sales', executive:'Abiram', taskName:'Kalasalingam Deemed Univ. Lib. Meeting & Genadhi Gramam Univ. Lib Visit.', status:'Need to follow up next week'}
+    ],
+    activities: [
+      {team:'Marketing', executive:'Abiram', taskName:'', dataExtracted:'', emailsSent:'', responses:'', deadline:'', status:''},
+      {team:'', executive:'Madhan', taskName:'JPA India', dataExtracted:47, emailsSent:47, responses:4, deadline:'Daily Activity based on mail incomings', status:''},
+      {team:'', executive:'Ramya', taskName:'JPA Singapore', dataExtracted:18, emailsSent:18, responses:'', deadline:'Daily Activity based on mail incomings', status:''},
+      {team:'', executive:'Madhan, Lokeshwari', taskName:'Twitter Ads', dataExtracted:4, emailsSent:4, responses:'', deadline:'4 per week (standard)', status:''},
+      {team:'', executive:'Madhan', taskName:'Twitter Ads-Resharing (Books)', dataExtracted:'', emailsSent:4, responses:'', deadline:'Based on the posts from SG. Update- Every Friday', status:''},
+      {team:'', executive:'Lokeshwari', taskName:'Twitter Ads-Resharing (journals)', dataExtracted:8, emailsSent:30, responses:'', deadline:'Based on the posts from SG. Update- Every Friday', status:''},
+      {team:'', executive:'Kiruba', taskName:'Social Media Spotlight', dataExtracted:92, emailsSent:92, responses:4, deadline:'Daily Activity based on TOC mail incomings', status:''},
+      {team:'', executive:'Kiruba', taskName:'Special issue contributors (M3AS)', dataExtracted:8, emailsSent:'', responses:'', deadline:'2026-06-19', status:'Completed'},
+      {team:'', executive:'Kiruba', taskName:'ONOS Usage Promotion', dataExtracted:245, emailsSent:'', responses:'', deadline:'', status:''},
+      {team:'', executive:'Kiruba', taskName:'Preparing Banner and writeup for Social media spotlight', dataExtracted:1, emailsSent:'', responses:'', deadline:'', status:''},
+      {team:'', executive:'Lokeshwari', taskName:'Open Acccess "Scheduling" Exercise', dataExtracted:'', emailsSent:60, responses:0, deadline:'Daily Activity based on mail incomings', status:''},
+      {team:'', executive:'Kiruba, Mani, Nanda Kurmar, Ramya, Rajesh, Siva Aruna', taskName:'Research network of IJAM contributors', dataExtracted:835, emailsSent:'', responses:'', deadline:'', status:''},
+      {team:'', executive:'Kiruba, Mani, Lokeshwari, sivaaruna, Ramya, Nanda Kumar', taskName:'Journals cluster grouping task for Munkit', dataExtracted:758, emailsSent:'', responses:'', deadline:'', status:''},
+      {team:'', executive:'Rajesh', taskName:'Dimension for FML Journal Guest Editors', dataExtracted:306, emailsSent:'', responses:'', deadline:'', status:''},
+      {team:'', executive:'Siva Aruna', taskName:'Request to collect the Network of Authors References of Biomineralization', dataExtracted:30, emailsSent:'', responses:'', deadline:'', status:''},
+      {team:'', executive:'Siva Aruna, Sarithra', taskName:'Dimension for Journal June 2026', dataExtracted:390, emailsSent:'', responses:'', deadline:'', status:'Ongoing'}
+    ],
+    breakup: [
+      {executive:'Lokeshwari', taskName:'Social Media - Twitter', dataExtracted:2, emailsSent:2},
+      {executive:'Lokeshwari', taskName:'Open Acccess "Scheduling" Exercise', dataExtracted:'', emailsSent:60},
+      {executive:'Lokeshwari', taskName:'Journals cluster grouping task for Munkit', dataExtracted:78, emailsSent:''},
+      {executive:'Lokeshwari', taskName:'Twitter Ads-Resharing (journals)', dataExtracted:8, emailsSent:30},
+      {executive:'Ramya', taskName:'JPA', dataExtracted:18, emailsSent:18},
+      {executive:'Ramya', taskName:'Journals cluster grouping task for Munkit', dataExtracted:98, emailsSent:''},
+      {executive:'Ramya', taskName:'Research network of IJAM contributors', dataExtracted:250, emailsSent:''},
+      {executive:'Kirubakaran', taskName:'Social Media- Spotlight', dataExtracted:92, emailsSent:92},
+      {executive:'Kirubakaran', taskName:'ONOS Usage Promotion', dataExtracted:245, emailsSent:''},
+      {executive:'Kirubakaran', taskName:'Special issue contributors (M3AS)', dataExtracted:8, emailsSent:''},
+      {executive:'Kirubakaran', taskName:'Journals cluster grouping task for Munkit', dataExtracted:78, emailsSent:''},
+      {executive:'Kirubakaran', taskName:'Research network of IJAM contributors', dataExtracted:56, emailsSent:''},
+      {executive:'Kirubakaran', taskName:'Preparing Banner and writeup for Social media spotlight', dataExtracted:0, emailsSent:''},
+      {executive:'Nanda Kumar', taskName:'Journals cluster grouping task for Munkit', dataExtracted:234, emailsSent:''},
+      {executive:'Nanda Kumar', taskName:'Research network of IJAM contributors', dataExtracted:200, emailsSent:''},
+      {executive:'Manikandan', taskName:'Journals cluster grouping task for Munkit', dataExtracted:120, emailsSent:''},
+      {executive:'Manikandan', taskName:'Research network of IJAM contributors', dataExtracted:60, emailsSent:''},
+      {executive:'Madhan', taskName:'Twitter Ads-Resharing (Books)', dataExtracted:4, emailsSent:''},
+      {executive:'Madhan', taskName:'Social Media - Twitter', dataExtracted:2, emailsSent:2},
+      {executive:'Madhan', taskName:'JPA', dataExtracted:47, emailsSent:47},
+      {executive:'Rajesh', taskName:'Research network of IJAM contributors', dataExtracted:29, emailsSent:''},
+      {executive:'Rajesh', taskName:'Dimension for FML Journal', dataExtracted:77, emailsSent:''},
+      {executive:'Rajesh', taskName:'Social Media- Spotlight (support)', dataExtracted:420, emailsSent:''},
+      {executive:'Siva Aruna', taskName:'Dimention Data Research', dataExtracted:195, emailsSent:''},
+      {executive:'Siva Aruna', taskName:'Journals cluster grouping task for Munkit', dataExtracted:150, emailsSent:''},
+      {executive:'Siva Aruna', taskName:'Research network of IJAM contributors', dataExtracted:220, emailsSent:''},
+      {executive:'Siva Aruna', taskName:'Collect the Network of Authors References of Biomineralization', dataExtracted:30, emailsSent:''},
+      {executive:'Sarithra', taskName:'Dimension for Journal June 2026', dataExtracted:195, emailsSent:''}
+    ]
+  },
+  ea: [
+    {team:'Editorial Assistant', executives:'Madhan, Sarithra', taskName:'Acquisition Research - Materials Science depart', dataExtracted:47, deadline:'', status:'On Going'},
+    {team:'', executives:'Sarithra, Manikandan, Rajesh, Sivaaruna', taskName:'Acquisition Research Request (Top Journal Customers)', dataExtracted:1450, deadline:'', status:'On Going'}
+  ],
+  changeLog: []
+};
+
+const TABLES = {
+  summaryMarketing: {
+    path: ['summary','marketing'],
+    title: 'Marketing Tasks Summary',
+    columns: [
+      {key:'sno', label:'S.No', type:'number', width:50, readonly:true},
+      {key:'task', label:'Tasks', type:'text', required:true},
+      {key:'type', label:'Type', type:'select', options:['Routine','New Task']},
+      {key:'dateReceived', label:'Date received - New tasks', type:'date'},
+      {key:'deadline', label:'Deadline', type:'date'},
+      {key:'status', label:'Status', type:'select', options:['Ongoing','Completed','Need to follow up next week','Pending']},
+      {key:'taskType', label:'Task Type', type:'select', options:['Data Extraction','Data Extraction & Email','Data Extraction & Banners','Data Extractio & Banners']},
+      {key:'remarks', label:'Remarks', type:'text'}
+    ]
+  },
+  summaryEditorial: {
+    path: ['summary','editorial'],
+    title: 'Editorial Assistance Tasks Summary',
+    columns: [
+      {key:'sno', label:'S.No', type:'number', width:50, readonly:true},
+      {key:'task', label:'Tasks', type:'text', required:true},
+      {key:'type', label:'Type', type:'select', options:['Routine','New Task']},
+      {key:'dateReceived', label:'Date received - New tasks', type:'date'},
+      {key:'deadline', label:'Deadline', type:'date'},
+      {key:'status', label:'Status', type:'select', options:['Ongoing','Completed','Need to follow up next week','Pending']},
+      {key:'taskType', label:'Task Type', type:'select', options:['Data Extraction','Data Extraction & Email','Data Extraction & Banners','Data Extractio & Banners']},
+      {key:'remarks', label:'Remarks', type:'text'}
+    ]
+  },
+  sales: {
+    path: ['marketing','sales'],
+    title: 'Sales Follow-ups',
+    columns: [
+      {key:'team', label:'Team', type:'text'},
+      {key:'executive', label:'Executives', type:'text'},
+      {key:'taskName', label:'Task Name', type:'text', required:true},
+      {key:'status', label:'Status', type:'select', options:['Need to follow up next week','Completed','Ongoing','Pending']}
+    ]
+  },
+  activities: {
+    path: ['marketing','activities'],
+    title: 'Marketing Daily Activities',
+    columns: [
+      {key:'team', label:'Team', type:'text'},
+      {key:'executive', label:'Executives', type:'text'},
+      {key:'taskName', label:'Task Name', type:'text', required:true},
+      {key:'dataExtracted', label:'Data Extracted', type:'number', min:0},
+      {key:'emailsSent', label:'Emails sent', type:'number', min:0},
+      {key:'responses', label:'Email Responses', type:'number', min:0},
+      {key:'deadline', label:'Deadline', type:'text'},
+      {key:'status', label:'Status', type:'select', options:['Ongoing','Completed','Need to follow up next week','Pending']}
+    ],
+    totals: ['dataExtracted','emailsSent','responses']
+  },
+  breakup: {
+    path: ['marketing','breakup'],
+    title: 'Break-up of tasks done by each executive',
+    columns: [
+      {key:'executive', label:'Executives', type:'text', required:true},
+      {key:'taskName', label:'Task Name', type:'text', required:true},
+      {key:'dataExtracted', label:'Data Extracted', type:'number', min:0},
+      {key:'emailsSent', label:'Emails sent', type:'number', min:0}
+    ],
+    totals: ['dataExtracted','emailsSent']
+  },
+  ea: {
+    path: ['ea'],
+    title: 'Editorial Assistance Tasks',
+    columns: [
+      {key:'team', label:'Team', type:'text'},
+      {key:'executives', label:'Executives', type:'text'},
+      {key:'taskName', label:'Task Name', type:'text', required:true},
+      {key:'dataExtracted', label:'Data Extracted', type:'number', min:0},
+      {key:'deadline', label:'Deadline', type:'date'},
+      {key:'status', label:'Status', type:'select', options:['On Going','Completed','Pending']}
+    ],
+    totals: ['dataExtracted']
+  }
+};
+
+const state = {
+  data: null,
+  dirHandle: null,
+  activeTab: 'summary',
+  search: {},
+  filterStatus: {},
+  modal: { open:false, tableKey:null, rowIndex:null, mode:'add' },
+  adminMode: false,
+  currentUser: null
+};
+
+const LS_KEY = 'weeklyReportData_v1';
+const USER_KEY = 'weeklyReportUser_v1';
+const IDB_NAME = 'weeklyReportFS';
+const IDB_STORE = 'handles';
+const DATA_FILE = 'weekly_report_data.json';
+const CLOUD_KEY = 'weeklyReportCloud';
+const PENDING_KEY = 'weeklyReportPendingSync';
+
+let firebaseEnabled = false;
+let firebaseDb = null;
+let firebaseRef = null;
+let isRemoteUpdate = false;
+let lastFirebaseUpdate = 0;
+
+const $ = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+function toast(msg, ms=2400) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>{ t.hidden = true; }, ms);
+}
+
+function getByPath(obj, path) { return path.reduce((o,k)=> (o ? o[k] : undefined), obj); }
+function setByPath(obj, path, val) {
+  const last = path[path.length-1];
+  const parent = path.slice(0,-1).reduce((o,k)=> (o[k] = o[k] || {}), obj);
+  parent[last] = val;
+}
+function fmtDate(v) {
+  if (!v) return '';
+  const d = new Date(v);
+  if (isNaN(d)) return v;
+  return d.toISOString().slice(0,10);
+}
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function nowStamp() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/* ---------- USER LOGIN ---------- */
+function showUserModal(force) {
+  const saved = localStorage.getItem(USER_KEY);
+  if (saved && !force) {
+    try {
+      state.currentUser = JSON.parse(saved);
+      updateUserBadge();
+      return;
+    } catch(e) {}
+  }
+  const backdrop = $('#userModalBackdrop');
+  backdrop.hidden = false;
+  if (saved) {
+    try {
+      const u = JSON.parse(saved);
+      $('#inputUserName').value = u.name || '';
+      $('#inputUserEmail').value = u.email || '';
+    } catch(e) {}
+  }
+  setTimeout(() => $('#inputUserName').focus(), 100);
+}
+
+function updateUserBadge() {
+  if (state.currentUser) {
+    $('#userNameDisplay').textContent = state.currentUser.name;
+    $('#userBadge').style.display = 'inline-flex';
+  } else {
+    $('#userBadge').style.display = 'none';
+  }
+}
+
+function confirmUser() {
+  const name = $('#inputUserName').value.trim();
+  const email = $('#inputUserEmail').value.trim();
+  const errEl = $('#userError');
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!name || name.length < 2) {
+    errEl.textContent = 'Please enter your name (at least 2 characters).';
+    errEl.classList.add('show');
+    $('#inputUserName').focus();
+    return;
+  }
+  if (!email || !emailRe.test(email)) {
+    errEl.textContent = 'Please enter a valid email address.';
+    errEl.classList.add('show');
+    $('#inputUserEmail').focus();
+    return;
+  }
+
+  state.currentUser = { name, email };
+  localStorage.setItem(USER_KEY, JSON.stringify(state.currentUser));
+  errEl.classList.remove('show');
+  $('#userModalBackdrop').hidden = true;
+  updateUserBadge();
+  toast(`👋 Welcome, ${name}!`);
+}
+
+/* ---------- CHANGE TRACKING ---------- */
+function trackChange(action, tableKey, rowIndex, before, after) {
+  if (!state.currentUser) return;
+  if (!state.data.changeLog) state.data.changeLog = [];
+
+  const cfg = TABLES[tableKey];
+  const actionLabel = action === 'add' ? 'Added' : action === 'edit' ? 'Edited' : 'Deleted';
+
+  let summary = '';
+  if (action === 'add') {
+    summary = `New row: ${after?.task || after?.taskName || after?.executive || '(no name)'}`;
+  } else if (action === 'edit') {
+    const changes = [];
+    Object.keys(after || {}).forEach(k => {
+      if (k === 'sno') return;
+      const oldV = before?.[k] ?? '';
+      const newV = after?.[k] ?? '';
+      if (String(oldV) !== String(newV)) {
+        changes.push(`${k}: "${oldV}" → "${newV}"`);
+      }
+    });
+    summary = changes.length ? changes.join(' | ') : 'No field changes detected';
+  } else if (action === 'delete') {
+    summary = `Deleted row: ${before?.task || before?.taskName || before?.executive || '(no name)'}`;
+  }
+
+  const entry = {
+    timestamp: nowStamp(),
+    userName: state.currentUser.name,
+    userEmail: state.currentUser.email,
+    action: actionLabel,
+    actionType: action,
+    table: cfg?.title || tableKey,
+    tableKey,
+    rowIndex,
+    summary,
+    before: before ? JSON.stringify(before) : '',
+    after: after ? JSON.stringify(after) : ''
+  };
+
+  state.data.changeLog.push(entry);
+  if (state.data.changeLog.length > 5000) {
+    state.data.changeLog = state.data.changeLog.slice(-5000);
+  }
+}
+
+/* ---------- ADMIN MODE ---------- */
+function toggleAdminMode() {
+  state.adminMode = !state.adminMode;
+  ['#tab-changelog','#tab-cloud','#tab-settings'].forEach(sel => {
+    const el = $(sel);
+    if (el) el.classList.toggle('revealed', state.adminMode);
+  });
+  const badge = $('#unlockBadge');
+  if (state.adminMode) {
+    badge?.classList.add('show');
+    toast('🔓 Admin mode ON');
+  } else {
+    badge?.classList.remove('show');
+    toast('🔒 Admin mode OFF');
+    if (['changelog','cloud','settings'].includes(state.activeTab)) {
+      state.activeTab = 'summary';
+      render();
+    }
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.shiftKey && e.altKey && (e.key === 'L' || e.key === 'l')) {
+    e.preventDefault();
+    toggleAdminMode();
+  }
+});
+
+/* ---------- INDEXEDDB ---------- */
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbSet(key, val) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(val, key);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+async function idbGet(key) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(IDB_STORE, 'readonly');
+    const r = tx.objectStore(IDB_STORE).get(key);
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+
+function showSaveIndicator(status, text) {
+  const el = $('#saveIndicator');
+  if (!el) return;
+  el.style.display = 'inline-flex';
+  el.className = 'save-indicator ' + status;
+  el.textContent = text;
+  if (status === 'saved') setTimeout(() => { el.style.display = 'none'; }, 2500);
+}
+
+function markPendingSync() {
+  localStorage.setItem(PENDING_KEY, 'true');
+  updateNetBadge('pending');
+  showSaveIndicator('pending', '⏳ Pending…');
+}
+function clearPendingSync() { localStorage.removeItem(PENDING_KEY); }
+function hasPendingSync() { return localStorage.getItem(PENDING_KEY) === 'true'; }
+
+/* ---------- FIREBASE ---------- */
+async function initFirebase() {
+  try {
+    if (!firebaseConfig.databaseURL || firebaseConfig.databaseURL.includes('PASTE')) return false;
+    if (typeof firebase === 'undefined') return false;
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    try {
+      await firebase.auth().signInAnonymously();
+      console.log('✅ Signed in anonymously');
+    } catch(authErr) {
+      console.error('❌ Anonymous auth failed:', authErr);
+    }
+    firebaseDb = firebase.database();
+    firebaseRef = firebaseDb.ref('weeklyReport');
+    firebaseEnabled = true;
+    firebaseRef.on('value', (snapshot) => {
+      const cloudData = snapshot.val();
+      if (!cloudData) return;
+      if (isRemoteUpdate) { isRemoteUpdate = false; return; }
+      const cloudJson = JSON.stringify(cloudData);
+      const localJson = JSON.stringify(state.data);
+      if (cloudJson !== localJson) {
+        state.data = cloudData;
+        if (!state.data.changeLog) state.data.changeLog = [];
+        localStorage.setItem(LS_KEY, JSON.stringify(state.data));
+        render();
+        toast('⚡ Real-time update from another system ✓');
+        updateNetBadge('realtime');
+        setTimeout(() => { if (isOnline) updateNetBadge('online'); }, 3000);
+      }
+    }, (error) => {
+      console.error('Firebase listener error:', error);
+      firebaseEnabled = false;
+    });
+    console.log('✅ Firebase real-time sync enabled');
+    toast('⚡ Real-time sync active ✓');
+    return true;
+  } catch(e) {
+    console.error('Firebase init failed:', e);
+    firebaseEnabled = false;
+    return false;
+  }
+}
+
+async function syncToFirebase() {
+  if (!firebaseEnabled || !firebaseRef) return false;
+  if (!isOnline) return false;
+  try {
+    isRemoteUpdate = true;
+    await firebaseRef.set(state.data);
+    lastFirebaseUpdate = Date.now();
+    return true;
+  } catch(e) {
+    console.error('Firebase sync failed:', e);
+    isRemoteUpdate = false;
+    return false;
+  }
+}
+
+/* ---------- AUTO-SAVE ---------- */
+let saveTimer = null;
+let isSaving = false;
+
+async function autoSave(reason) {
+  clearTimeout(saveTimer);
+  showSaveIndicator('saving', '💾 Saving…');
+  saveTimer = setTimeout(async () => {
+    if (isSaving) return;
+    isSaving = true;
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(state.data));
+      if (state.dirHandle) {
+        try {
+          if (await ensurePerm(state.dirHandle)) {
+            const fh = await state.dirHandle.getFileHandle(DATA_FILE, { create:true });
+            const w = await fh.createWritable();
+            await w.write(JSON.stringify(state.data, null, 2));
+            await w.close();
+          }
+        } catch(e) { console.warn('OneDrive save failed:', e); }
+      }
+      if (firebaseEnabled) {
+        if (isOnline) {
+          const ok = await syncToFirebase();
+          if (ok) { showSaveIndicator('saved', '✅ Real-time synced'); updateLastUpdated(); clearPendingSync(); }
+          else { showSaveIndicator('error', '⚠️ Firebase failed'); markPendingSync(); }
+        } else { showSaveIndicator('pending', '⏳ Offline'); markPendingSync(); updateLastUpdated(); }
+      } else if (cloudConfig && cloudConfig.binId && cloudConfig.apiKey) {
+        if (isOnline) {
+          const ok = await syncToCloud();
+          if (ok) { showSaveIndicator('saved', '✅ Saved'); updateLastUpdated(); clearPendingSync(); }
+          else { showSaveIndicator('error', '⚠️ Cloud failed'); markPendingSync(); }
+        } else { showSaveIndicator('pending', '⏳ Offline'); markPendingSync(); updateLastUpdated(); }
+      } else {
+        showSaveIndicator('saved', '✅ Saved');
+        updateLastUpdated();
+      }
+    } catch(e) {
+      console.error('Auto-save error:', e);
+      showSaveIndicator('error', '⚠️ Error');
+      markPendingSync();
+    } finally { isSaving = false; }
+  }, 1500);
+}
+
+/* ---------- INTERNET + JSONBIN ---------- */
+let cloudConfig = JSON.parse(localStorage.getItem(CLOUD_KEY) || 'null');
+let isOnline = false;
+let isSyncing = false;
+let lastCloudSync = localStorage.getItem('weeklyReportLastCloudSync');
+
+async function checkRealInternet() {
+  try {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 4000);
+    await fetch('https://www.google.com/generate_204', { method:'HEAD', mode:'no-cors', cache:'no-store', signal: controller.signal });
+    clearTimeout(t);
+    return true;
+  } catch { return false; }
+}
+
+function updateNetBadge(s) {
+  const el = document.getElementById('netStatus');
+  if (!el) return;
+  const lbl = el.querySelector('.label');
+  el.classList.remove('online', 'offline', 'syncing', 'pending', 'realtime');
+  if (s === 'online') {
+    el.classList.add('online');
+    lbl.textContent = firebaseEnabled ? 'Online • ⚡ Real-Time' : cloudConfig ? 'Online • Cloud On' : 'Online';
+  } else if (s === 'offline') { el.classList.add('offline'); lbl.textContent = 'Offline'; }
+  else if (s === 'syncing') { el.classList.add('syncing'); lbl.textContent = 'Syncing…'; }
+  else if (s === 'pending') { el.classList.add('pending'); lbl.textContent = 'Pending sync…'; }
+  else if (s === 'realtime') { el.classList.add('realtime'); lbl.textContent = '⚡ Real-time!'; }
+}
+
+async function refreshNetStatus() {
+  if (isSyncing) { updateNetBadge('syncing'); return; }
+  if (!navigator.onLine) { isOnline = false; updateNetBadge('offline'); return; }
+  const real = await checkRealInternet();
+  isOnline = real;
+  if (real) {
+    if (hasPendingSync() && cloudConfig && !firebaseEnabled) {
+      updateNetBadge('syncing');
+      const ok = await syncToCloud();
+      if (ok) { clearPendingSync(); updateNetBadge('online'); }
+      else updateNetBadge('pending');
+    } else updateNetBadge('online');
+  } else updateNetBadge('offline');
+}
+
+window.addEventListener('online', () => setTimeout(refreshNetStatus, 1000));
+window.addEventListener('offline', refreshNetStatus);
+
+async function syncToCloud() {
+  if (!cloudConfig || !cloudConfig.binId || !cloudConfig.apiKey) return false;
+  if (!isOnline || isSyncing) return false;
+  isSyncing = true;
+  updateNetBadge('syncing');
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${cloudConfig.binId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': cloudConfig.apiKey, 'X-Bin-Versioning': 'false' },
+      body: JSON.stringify(state.data)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    lastCloudSync = new Date().toISOString();
+    localStorage.setItem('weeklyReportLastCloudSync', lastCloudSync);
+    isSyncing = false;
+    updateNetBadge('online');
+    if (state.activeTab === 'cloud') render();
+    return true;
+  } catch (e) {
+    console.error('Cloud sync error:', e);
+    isSyncing = false;
+    if (isOnline) updateNetBadge('online');
+    return false;
+  }
+}
+
+async function loadFromCloud(silent) {
+  if (!cloudConfig || !cloudConfig.binId || !cloudConfig.apiKey) {
+    if (!silent) toast('Configure cloud first');
+    return false;
+  }
+  if (!isOnline) { if (!silent) toast('Offline'); return false; }
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${cloudConfig.binId}/latest`, {
+      headers: { 'X-Master-Key': cloudConfig.apiKey }
+    });
+    if (!res.ok) throw new Error('Load failed');
+    const json = await res.json();
+    if (json.record && json.record.summary) {
+      if (!silent && !confirm('Replace current data with cloud data?')) return false;
+      state.data = json.record;
+      if (!state.data.changeLog) state.data.changeLog = [];
+      localStorage.setItem(LS_KEY, JSON.stringify(state.data));
+      render();
+      if (!silent) toast('☁️ Loaded from cloud ✓');
+      return true;
+    } else {
+      if (!silent) toast('Cloud is empty');
+      return false;
+    }
+  } catch (e) {
+    console.error(e);
+    if (!silent) toast('Cloud load failed');
+    return false;
+  }
+}
+
+/* ---------- INIT ---------- */
+async function init() {
+  const raw = localStorage.getItem(LS_KEY);
+  state.data = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEFAULT_DATA));
+  if (!state.data.changeLog) state.data.changeLog = [];
+
+  if ('showDirectoryPicker' in window) {
+    try {
+      const handle = await idbGet('dirHandle');
+      if (handle) { state.dirHandle = handle; try { await loadFromFolder(); } catch(e) {} }
+    } catch(e) {}
+  }
+
+  if (!state.data) state.data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  if (!state.data.changeLog) state.data.changeLog = [];
+
+  render();
+  updateLastUpdated();
+  await initFirebase();
+  await refreshNetStatus();
+  showUserModal(false);
+
+  setInterval(refreshNetStatus, 30000);
+  setInterval(async () => {
+    if (hasPendingSync() && isOnline && !firebaseEnabled && cloudConfig) {
+      const ok = await syncToCloud();
+      if (ok) { clearPendingSync(); showSaveIndicator('saved', '✅ Synced'); }
+    }
+  }, 60000);
+
+  window.addEventListener('beforeunload', (e) => {
+    localStorage.setItem(LS_KEY, JSON.stringify(state.data));
+    if (hasPendingSync()) { e.preventDefault(); e.returnValue = 'You have unsaved changes. Are you sure?'; }
+  });
+}
+
+/* ---------- ONEDRIVE ---------- */
+async function pickFolder() {
+  if (!('showDirectoryPicker' in window)) { toast('Not supported.'); return; }
+  try {
+    const handle = await window.showDirectoryPicker({ mode:'readwrite' });
+    state.dirHandle = handle;
+    await idbSet('dirHandle', handle);
+    await loadFromFolder();
+    toast('OneDrive connected ✓');
+    render();
+  } catch(e) {}
+}
+async function ensurePerm(handle) {
+  if (!handle) return false;
+  const opts = { mode:'readwrite' };
+  if (await handle.queryPermission(opts) === 'granted') return true;
+  if (await handle.requestPermission(opts) === 'granted') return true;
+  return false;
+}
+async function loadFromFolder() {
+  if (!state.dirHandle) return;
+  if (!(await ensurePerm(state.dirHandle))) return;
+  try {
+    const fh = await state.dirHandle.getFileHandle(DATA_FILE);
+    const file = await fh.getFile();
+    const text = await file.text();
+    state.data = JSON.parse(text);
+    if (!state.data.changeLog) state.data.changeLog = [];
+  } catch (e) { await autoSave(); }
+}
+
+function updateLastUpdated() {
+  const el = $('#lastUpdated');
+  if (el) {
+    const now = new Date().toLocaleTimeString();
+    el.childNodes[0].nodeValue = 'Saved: ' + now + ' ';
+  }
+}
+
+/* ---------- RENDER ---------- */
+function render() {
+  renderTabs();
+  const view = $('#view');
+  if (state.activeTab === 'summary') view.innerHTML = renderSummary();
+  else if (state.activeTab === 'marketing') view.innerHTML = renderMarketing();
+  else if (state.activeTab === 'ea') view.innerHTML = renderEA();
+  else if (state.activeTab === 'reports') view.innerHTML = renderReports();
+  else if (state.activeTab === 'changelog') view.innerHTML = renderChangeLog();
+  else if (state.activeTab === 'cloud') view.innerHTML = renderCloud();
+  else if (state.activeTab === 'settings') view.innerHTML = renderSettings();
+  bindEvents();
+}
+
+function renderTabs() {
+  $$('#tabs .tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === state.activeTab);
+  });
+}
+
+function renderSummary() {
+  return `
+    <div class="card">
+      <h2>📋 Marketing Tasks Summary</h2>
+      ${renderTableControls('summaryMarketing')}
+      ${renderTable('summaryMarketing')}
+    </div>
+    <div class="card">
+      <h2>📝 Editorial Assisatance Tasks Summary</h2>
+      ${renderTableControls('summaryEditorial')}
+      ${renderTable('summaryEditorial')}
+    </div>
+  `;
+}
+
+function renderMarketing() {
+  return `
+    <div class="card">
+      <h2>💼 Sales Follow-ups</h2>
+      ${renderTableControls('sales')}
+      ${renderTable('sales')}
+    </div>
+    <div class="card">
+      <h2>📊 Marketing Daily Activities</h2>
+      ${renderTableControls('activities')}
+      ${renderTable('activities')}
+    </div>
+    <div class="card">
+      <h2>👥 Break-up of tasks done by each executive</h2>
+      ${renderTableControls('breakup')}
+      ${renderTable('breakup')}
+    </div>
+  `;
+}
+
+function renderEA() {
+  return `
+    <div class="card">
+      <h2>📚 Editorial Assistant Tasks</h2>
+      ${renderTableControls('ea')}
+      ${renderTable('ea')}
+    </div>
+  `;
+}
+
+function renderChangeLog() {
+  const log = (state.data.changeLog || []).slice().reverse();
+  const total = log.length;
+  const search = (state.search['changelog'] || '').toLowerCase();
+
+  const filtered = search ? log.filter(e =>
+    (e.userName || '').toLowerCase().includes(search) ||
+    (e.userEmail || '').toLowerCase().includes(search) ||
+    (e.action || '').toLowerCase().includes(search) ||
+    (e.table || '').toLowerCase().includes(search) ||
+    (e.summary || '').toLowerCase().includes(search)
+  ) : log;
+
+  return `
+    <div class="card">
+      <h2>📝 Change Log — ${total} ${total === 1 ? 'entry' : 'entries'}</h2>
+      <p class="hint">Yaaru, enna maathinaanga nu ellaa details-um inga irukku. Excel export la "Change Log" sheet la varum.</p>
+      <div class="toolbar" style="margin-top:12px">
+        <input type="text" placeholder="🔍 Search (name, email, action, table…)" data-search="changelog" value="${escapeHtml(state.search['changelog'] || '')}" style="min-width:280px" />
+        <button class="btn" data-action="export-changelog">⬇ Export Change Log</button>
+        <button class="btn danger" data-action="clear-changelog">🗑 Clear Change Log</button>
+      </div>
+      <div style="overflow:auto;max-height:65vh;border:1px solid var(--border);border-radius:10px">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:150px">Timestamp</th>
+              <th style="width:150px">User</th>
+              <th style="width:200px">Email</th>
+              <th style="width:90px">Action</th>
+              <th style="width:180px">Table</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length === 0 ? `<tr><td colspan="6" class="empty">No changes recorded yet</td></tr>` : ''}
+            ${filtered.map(e => {
+              const actionCls = e.actionType === 'add' ? 'add' : e.actionType === 'edit' ? 'edit' : 'delete';
+              return `<tr>
+                <td><small>${escapeHtml(e.timestamp)}</small></td>
+                <td><b>${escapeHtml(e.userName || '—')}</b></td>
+                <td><small>${escapeHtml(e.userEmail || '—')}</small></td>
+                <td><span class="pill ${actionCls}">${escapeHtml(e.action)}</span></td>
+                <td><small>${escapeHtml(e.table || '—')}</small></td>
+                <td><small>${escapeHtml(e.summary || '—')}</small></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderTableControls(key) {
+  const cols = TABLES[key].columns;
+  const statusCol = cols.find(c => c.key === 'status');
+  const search = state.search[key] || '';
+  const filter = state.filterStatus[key] || '';
+  return `
+    <div class="toolbar">
+      <input type="text" placeholder="🔍 Search tasks…" data-search="${key}" value="${escapeHtml(search)}" />
+      ${statusCol ? `
+        <select data-filter="${key}">
+          <option value="">All Status</option>
+          ${statusCol.options.map(o => `<option ${filter===o?'selected':''}>${escapeHtml(o)}</option>`).join('')}
+        </select>` : ''}
+      <button class="btn primary" data-add="${key}">+ Add Row</button>
+      <button class="btn" data-export-table="${key}">⬇ Export Table</button>
+    </div>
+  `;
+}
+
+function renderTable(key) {
+  const cfg = TABLES[key];
+  const rows = getByPath(state.data, cfg.path) || [];
+  const cols = cfg.columns;
+  const search = (state.search[key] || '').toLowerCase();
+  const filter = state.filterStatus[key] || '';
+
+  const filtered = rows.filter(r => {
+    if (filter && r.status !== filter) return false;
+    if (!search) return true;
+    return cols.some(c => String(r[c.key] ?? '').toLowerCase().includes(search));
+  });
+
+  const totals = {};
+  if (cfg.totals) {
+    cfg.totals.forEach(k => {
+      totals[k] = filtered.reduce((s,r) => s + (Number(r[k]) || 0), 0);
+    });
+  }
+
+  const statusPill = (v) => {
+    if (!v) return '';
+    const cls = /ongoing|on going/i.test(v) ? 'ongoing'
+      : /completed/i.test(v) ? 'completed'
+      : /pending/i.test(v) ? 'pending'
+      : /new task/i.test(v) ? 'new'
+      : /routine/i.test(v) ? 'routine' : '';
+    return `<span class="pill ${cls}">${escapeHtml(v)}</span>`;
+  };
+
+  return `
+    <div style="overflow:auto;max-height:65vh;border:1px solid var(--border);border-radius:10px">
+      <table>
+        <thead>
+          <tr>
+            ${cols.map(c => `<th style="${c.width?`width:${c.width}px`:''}">${escapeHtml(c.label)}</th>`).join('')}
+            <th style="width:90px">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered.length === 0 ? `<tr><td colspan="${cols.length+1}" class="empty">No rows found</td></tr>` : ''}
+          ${filtered.map((r) => {
+            const realIndex = rows.indexOf(r);
+            return `<tr>
+              ${cols.map(c => {
+                let val = r[c.key] ?? '';
+                if (c.key === 'status' || c.key === 'type') return `<td>${statusPill(val)}</td>`;
+                if (c.type === 'number') return `<td class="num">${val === '' ? '' : Number(val).toLocaleString()}</td>`;
+                if (c.type === 'date') return `<td>${val ? fmtDate(val) : ''}</td>`;
+                return `<td>${escapeHtml(val)}</td>`;
+              }).join('')}
+              <td class="actions">
+                <button class="icon-btn" data-edit="${key}" data-index="${realIndex}" title="Edit">✏️</button>
+                <button class="icon-btn" data-delete="${key}" data-index="${realIndex}" title="Delete">🗑️</button>
+              </td>
+            </tr>`;
+          }).join('')}
+          ${cfg.totals ? `
+            <tr class="total-row">
+              <td colspan="${cols.findIndex(c => c.key === cfg.totals[0])}">Total</td>
+              ${cfg.totals.map((k,i) => `<td class="num">${totals[k].toLocaleString()}</td>`).join('')}
+              <td colspan="${cols.length - cols.findIndex(c => c.key === cfg.totals[0]) - cfg.totals.length}"></td>
+              <td></td>
+            </tr>` : ''}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderReports() {
+  const totalData = (state.data.marketing.breakup || []).reduce((s,r)=>s+(Number(r.dataExtracted)||0),0);
+  const totalEmails = (state.data.marketing.breakup || []).reduce((s,r)=>s+(Number(r.emailsSent)||0),0);
+  const changeCount = (state.data.changeLog || []).length;
+  return `
+    <div class="card">
+      <h2>📈 Overview</h2>
+      <div class="stat-grid">
+        <div class="stat"><div class="lbl">Summary Tasks</div><div class="val">${(state.data.summary.marketing.length + state.data.summary.editorial.length)}</div></div>
+        <div class="stat"><div class="lbl">Marketing Activities</div><div class="val">${state.data.marketing.activities.length}</div></div>
+        <div class="stat"><div class="lbl">EA Tasks</div><div class="val">${state.data.ea.length}</div></div>
+        <div class="stat"><div class="lbl">Total Data Extracted</div><div class="val">${totalData.toLocaleString()}</div></div>
+        <div class="stat"><div class="lbl">Total Emails Sent</div><div class="val">${totalEmails.toLocaleString()}</div></div>
+        <div class="stat"><div class="lbl">Change Log Entries</div><div class="val">${changeCount.toLocaleString()}</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📤 Export &amp; Reports</h2>
+      <div class="toolbar">
+        <button class="btn primary" data-action="export-full">⬇ Export Full Excel (.xlsx)</button>
+        <button class="btn primary" data-action="weekly-report">📅 Generate Weekly Report</button>
+        <button class="btn" data-action="export-json">⬇ Download JSON</button>
+        <button class="btn" data-action="import-json">⬆ Import JSON</button>
+        <input type="file" id="importFile" accept=".json" hidden />
+      </div>
+      <p class="hint">Excel export la <b>Summary</b>, <b>Marketing</b>, <b>EA</b>, + <b>Change Log</b> sheets varum.</p>
+    </div>
+    <div class="card">
+      <h2>✉️ Email Weekly Report</h2>
+      <div class="toolbar">
+        <input type="email" id="emailTo" placeholder="recipient@example.com" style="min-width:260px" />
+        <button class="btn primary" data-action="send-email">✉️ Open Email with Report</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderCloud() {
+  const configured = !!(cloudConfig && cloudConfig.binId && cloudConfig.apiKey);
+  const pending = hasPendingSync();
+  const fbConfigured = !!(firebaseConfig.databaseURL && !firebaseConfig.databaseURL.includes('PASTE'));
+  return `
+    <div class="card">
+      <h2>⚡ Firebase Real-Time Sync</h2>
+      <div class="stat-grid">
+        <div class="stat"><div class="lbl">Status</div><div class="val" style="font-size:16px">${fbConfigured ? (firebaseEnabled ? '✅ Active' : '⚠️ Error') : '❌ Not configured'}</div></div>
+        <div class="stat"><div class="lbl">Auth</div><div class="val" style="font-size:16px">${firebaseEnabled ? '✅ Anonymous' : '❌ Not signed in'}</div></div>
+        <div class="stat"><div class="lbl">Internet</div><div class="val" style="font-size:16px">${isOnline ? '🟢 Online' : '🔴 Offline'}</div></div>
+        <div class="stat"><div class="lbl">Mode</div><div class="val" style="font-size:16px">${firebaseEnabled ? '⚡ Real-Time' : (configured ? '☁️ Cloud' : '💾 Local')}</div></div>
+      </div>
+      <div class="card" style="background:#dcfce7;border-color:#86efac">
+        <h3 style="margin:0 0 8px;font-size:14px">🔐 Lifetime Free Active</h3>
+        <p class="hint" style="color:#166534">Anonymous auth → Spark plan = lifetime free.</p>
+      </div>
+    </div>
+    <div class="card">
+      <h2>☁️ JSONBin.io Fallback</h2>
+      <div class="stat-grid">
+        <div class="stat"><div class="lbl">Status</div><div class="val" style="font-size:16px">${configured ? '✅ Configured' : '❌ Not configured'}</div></div>
+        <div class="stat"><div class="lbl">Last Sync</div><div class="val" style="font-size:14px">${lastCloudSync ? new Date(lastCloudSync).toLocaleString() : '—'}</div></div>
+        <div class="stat"><div class="lbl">Pending</div><div class="val" style="font-size:16px">${pending ? '⏳ Yes' : '✅ No'}</div></div>
+      </div>
+      ${configured ? `
+        <div class="toolbar">
+          <button class="btn primary" data-action="sync-now">☁️ Sync Now</button>
+          <button class="btn" data-action="load-cloud">⬇ Load from Cloud</button>
+          <button class="btn danger" data-action="unlink-cloud">🔓 Unlink Cloud</button>
+        </div>
+      ` : ''}
+    </div>
+    <div class="card">
+      <h2>🔧 Setup JSONBin.io</h2>
+      <div class="toolbar">
+        <input type="text" id="cloudBinId" placeholder="Bin ID" style="min-width:280px" value="${configured ? escapeHtml(cloudConfig.binId) : ''}" />
+      </div>
+      <div class="toolbar">
+        <input type="password" id="cloudApiKey" placeholder="Master Key" style="min-width:280px" value="${configured ? escapeHtml(cloudConfig.apiKey) : ''}" />
+      </div>
+      <div class="toolbar">
+        <button class="btn primary" data-action="save-cloud">💾 Save Cloud Config</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderSettings() {
+  const connected = !!state.dirHandle;
+  return `
+    <div class="card">
+      <h2>📁 OneDrive / Local Folder Storage</h2>
+      <div class="toolbar">
+        <button class="btn primary" data-action="pick-folder">${connected ? '🔁 Change Folder' : '📂 Connect Folder'}</button>
+        <button class="btn" data-action="save-now">💾 Save Now</button>
+      </div>
+      <p class="hint">Status: ${connected ? '✅ Connected' : '❌ Not connected'}</p>
+      <p class="hint">Folder: ${state.dirHandle?.name || '—'}</p>
+    </div>
+    <div class="card">
+      <h2>👤 Current User</h2>
+      <p class="hint">Name: <b>${escapeHtml(state.currentUser?.name || '—')}</b></p>
+      <p class="hint">Email: <b>${escapeHtml(state.currentUser?.email || '—')}</b></p>
+      <div class="toolbar">
+        <button class="btn" data-action="change-user">🔁 Change User</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📧 Email Settings</h2>
+      <div class="toolbar">
+        <input type="email" id="settingsEmail" placeholder="you@example.com" value="${escapeHtml(localStorage.getItem('weeklyReportEmail')||'')}" style="min-width:280px" />
+        <button class="btn primary" data-action="save-email">Save Email</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>🛟 Backup &amp; Restore</h2>
+      <div class="toolbar">
+        <button class="btn" data-action="export-json">⬇ Download Backup JSON</button>
+        <button class="btn" data-action="import-json">⬆ Restore from JSON</button>
+        <button class="btn danger" data-action="reset-data">⚠️ Reset to Default Data</button>
+      </div>
+    </div>
+    <div class="card" style="background:#fef3c7;border-color:#fcd34d">
+      <h2>🔐 Admin Shortcut</h2>
+      <p class="hint" style="color:#92400e"><b>Ctrl + Shift + Alt + L</b> → Change Log, Cloud &amp; Settings tabs hide/show aagum.</p>
+    </div>
+  `;
+}
+
+/* ---------- EVENTS ---------- */
+function bindEvents() {
+  $$('#tabs .tab').forEach(btn => {
+    btn.onclick = () => { state.activeTab = btn.dataset.tab; render(); };
+  });
+
+  $$('[data-search]').forEach(inp => {
+    inp.oninput = () => {
+      state.search[inp.dataset.search] = inp.value;
+      render();
+      const again = $(`[data-search="${inp.dataset.search}"]`);
+      if (again) { again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+    };
+  });
+
+  $$('[data-filter]').forEach(sel => {
+    sel.onchange = () => { state.filterStatus[sel.dataset.filter] = sel.value; render(); };
+  });
+
+  $$('[data-add]').forEach(btn => { btn.onclick = () => openModal(btn.dataset.add, null); });
+  $$('[data-edit]').forEach(btn => { btn.onclick = () => openModal(btn.dataset.edit, Number(btn.dataset.index)); });
+  $$('[data-delete]').forEach(btn => { btn.onclick = () => deleteRow(btn.dataset.delete, Number(btn.dataset.index)); });
+  $$('[data-export-table]').forEach(btn => { btn.onclick = () => exportTableToExcel(btn.dataset.exportTable); });
+  $$('[data-action]').forEach(btn => { btn.onclick = () => handleAction(btn.dataset.action); });
+
+  const imp = $('#importFile');
+  if (imp) {
+    imp.onchange = (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          state.data = JSON.parse(reader.result);
+          if (!state.data.changeLog) state.data.changeLog = [];
+          await autoSave('import');
+          render();
+          toast('Imported ✓');
+        } catch(err) { toast('Invalid JSON'); }
+      };
+      reader.readAsText(f);
+    };
+  }
+}
+
+async function handleAction(action) {
+  if (action === 'pick-folder') return pickFolder();
+  if (action === 'save-now') { await autoSave('manual'); toast('Saving…'); return; }
+  if (action === 'export-full') return exportFullWorkbook();
+  if (action === 'weekly-report') return generateWeeklyReport();
+  if (action === 'export-json') return downloadJSON();
+  if (action === 'import-json') { $('#importFile').click(); return; }
+  if (action === 'save-email') {
+    localStorage.setItem('weeklyReportEmail', $('#settingsEmail').value.trim());
+    toast('Email saved ✓'); return;
+  }
+  if (action === 'send-email') return sendEmailFlow();
+  if (action === 'change-user') {
+    if (confirm('Change user? Current name & email will be replaced.')) showUserModal(true);
+    return;
+  }
+  if (action === 'export-changelog') return exportChangeLog();
+  if (action === 'clear-changelog') {
+    if (!confirm('Clear ALL change log entries? This cannot be undone.')) return;
+    state.data.changeLog = [];
+    await autoSave('clear-changelog');
+    render();
+    toast('Change log cleared');
+    return;
+  }
+  if (action === 'sync-now') {
+    showSaveIndicator('saving', '💾 Syncing…');
+    if (firebaseEnabled) {
+      const ok = await syncToFirebase();
+      if (ok) { showSaveIndicator('saved', '✅ Synced'); toast('⚡ Firebase synced ✓'); }
+      else { showSaveIndicator('error', '⚠️ Failed'); toast('Firebase sync failed'); }
+    } else {
+      const ok = await syncToCloud();
+      if (ok) { showSaveIndicator('saved', '✅ Synced'); clearPendingSync(); toast('☁️ Cloud synced ✓'); }
+      else { showSaveIndicator('error', '⚠️ Failed'); toast('Cloud sync failed'); }
+    }
+    if (state.activeTab === 'cloud') render();
+    return;
+  }
+  if (action === 'load-cloud') return loadFromCloud(false);
+  if (action === 'unlink-cloud') {
+    if (!confirm('Remove cloud configuration?')) return;
+    cloudConfig = null;
+    localStorage.removeItem(CLOUD_KEY);
+    render();
+    refreshNetStatus();
+    toast('Cloud unlinked'); return;
+  }
+  if (action === 'save-cloud') {
+    const binId = $('#cloudBinId').value.trim();
+    const apiKey = $('#cloudApiKey').value.trim();
+    if (!binId || !apiKey) { toast('Fill Bin ID and Master Key'); return; }
+    cloudConfig = { binId, apiKey };
+    localStorage.setItem(CLOUD_KEY, JSON.stringify(cloudConfig));
+    toast('Cloud configured ✓');
+    render();
+    refreshNetStatus();
+    return;
+  }
+  if (action === 'reset-data') {
+    if (!confirm('Reset all data to default? Change log also cleared.')) return;
+    state.data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    state.data.changeLog = [];
+    await autoSave('reset');
+    render();
+    toast('Reset ✓');
+    return;
+  }
+}
+
+/* ---------- CRUD ---------- */
+function openModal(tableKey, rowIndex) {
+  const cfg = TABLES[tableKey];
+  if (!cfg) { toast('Error: Table not found'); return; }
+  const rows = getByPath(state.data, cfg.path) || [];
+  const row = rowIndex === null ? {} : {...rows[rowIndex]};
+  state.modal = { open:true, tableKey, rowIndex, mode: rowIndex === null ? 'add' : 'edit' };
+
+  $('#modalTitle').textContent = (rowIndex === null ? 'Add' : 'Edit') + ' — ' + cfg.title;
+
+  const form = $('#modalForm');
+  form.innerHTML = cfg.columns.map(c => {
+    if (c.readonly) return '';
+    const val = row[c.key] ?? '';
+    const id = 'f_' + c.key;
+    if (c.type === 'select') {
+      return `<div class="field">
+        <label for="${id}">${escapeHtml(c.label)}</label>
+        <select id="${id}" data-key="${c.key}">
+          <option value="">—</option>
+          ${c.options.map(o => `<option ${val===o?'selected':''}>${escapeHtml(o)}</option>`).join('')}
+        </select>
+      </div>`;
+    }
+    if (c.type === 'date') {
+      return `<div class="field">
+        <label for="${id}">${escapeHtml(c.label)}</label>
+        <input type="date" id="${id}" data-key="${c.key}" value="${escapeHtml(val?fmtDate(val):'')}" />
+      </div>`;
+    }
+    if (c.type === 'number') {
+      return `<div class="field">
+        <label for="${id}">${escapeHtml(c.label)}</label>
+        <input type="number" min="${c.min??0}" id="${id}" data-key="${c.key}" value="${escapeHtml(val)}" />
+      </div>`;
+    }
+    return `<div class="field">
+      <label for="${id}">${escapeHtml(c.label)}</label>
+      <input type="text" id="${id}" data-key="${c.key}" value="${escapeHtml(val)}" ${c.required?'required':''} />
+    </div>`;
+  }).join('');
+
+  $('#modalBackdrop').hidden = false;
+}
+
+function closeModal() {
+  $('#modalBackdrop').hidden = true;
+  state.modal = { open:false, tableKey:null, rowIndex:null, mode:'add' };
+}
+
+async function saveModal() {
+  const { tableKey, rowIndex, mode } = state.modal;
+  const cfg = TABLES[tableKey];
+  if (!cfg) return;
+  const rows = getByPath(state.data, cfg.path) || [];
+
+  const beforeRow = mode === 'edit' ? {...rows[rowIndex]} : null;
+  const newRow = mode === 'edit' ? {...rows[rowIndex]} : {};
+  const inputs = $$('#modalForm [data-key]');
+  for (const inp of inputs) {
+    const key = inp.dataset.key;
+    const col = cfg.columns.find(c => c.key === key);
+    if (!col) continue;
+    let val = inp.value;
+    if (col.required && !val.trim()) { toast('Please fill: ' + col.label); inp.focus(); return; }
+    if (col.type === 'number') {
+      if (val === '') val = '';
+      else {
+        const n = Number(val);
+        if (isNaN(n) || n < 0) { toast('Invalid number: ' + col.label); inp.focus(); return; }
+        val = n;
+      }
+    }
+    newRow[key] = val;
+  }
+
+  if (mode === 'add') {
+    if (cfg.columns.some(c => c.key === 'sno')) {
+      newRow.sno = rows.length ? Math.max(...rows.map(r => Number(r.sno)||0)) + 1 : 1;
+    }
+    rows.push(newRow);
+    trackChange('add', tableKey, rows.length - 1, null, newRow);
+  } else {
+    rows[rowIndex] = newRow;
+    trackChange('edit', tableKey, rowIndex, beforeRow, newRow);
+  }
+
+  setByPath(state.data, cfg.path, rows);
+  closeModal();
+  render();
+  toast('Saved ✓');
+  await autoSave(mode);
+}
+
+async function deleteRow(tableKey, index) {
+  const cfg = TABLES[tableKey];
+  const rows = getByPath(state.data, cfg.path) || [];
+  const deletedRow = {...rows[index]};
+  if (!confirm(`Delete this row?\n\n${deletedRow?.task || deletedRow?.taskName || ''}`)) return;
+  rows.splice(index, 1);
+  if (cfg.columns.some(c => c.key === 'sno')) { rows.forEach((r,i) => r.sno = i+1); }
+  setByPath(state.data, cfg.path, rows);
+  trackChange('delete', tableKey, index, deletedRow, null);
+  render();
+  toast('Deleted ✓');
+  await autoSave('delete');
+}
+
+/* ---------- EXCEL BUILD ---------- */
+function buildSummarySheet() {
+  const aoa = [['Marketing Tasks Summary'], []];
+  aoa.push(['S.No','Tasks','Type','Date received- New tasks','Deadline','Status','Task Type','Remarks']);
+  state.data.summary.marketing.forEach(r => {
+    aoa.push([r.sno, r.task, r.type, r.dateReceived, r.deadline, r.status, r.taskType, r.remarks]);
+  });
+  aoa.push([], ['Editorial Assisatance Tasks Summary'], []);
+  aoa.push(['S.No','Tasks','Type','Date received- New tasks','Deadline','Status','Task Type','Remarks']);
+  state.data.summary.editorial.forEach(r => {
+    aoa.push([r.sno, r.task, r.type, r.dateReceived, r.deadline, r.status, r.taskType, r.remarks]);
+  });
+  return aoa;
+}
+
+function buildMarketingSheet() {
+  const aoa = [['Team','Executives','Task Name','Status']];
+  state.data.marketing.sales.forEach(r => { aoa.push([r.team, r.executive, r.taskName, r.status]); });
+  aoa.push([], ['Team','Executives','Task Name','Data Extracted','Emails sent','Email Repsonses','Deadline','Status']);
+  state.data.marketing.activities.forEach(r => {
+    aoa.push([r.team, r.executive, r.taskName, r.dataExtracted, r.emailsSent, r.responses, r.deadline, r.status]);
+  });
+  aoa.push([], ['Break-up of tasks done by each executives'], []);
+  aoa.push(['Executives','Task Name','Data Extracted','Emails sent']);
+  state.data.marketing.breakup.forEach(r => { aoa.push([r.executive, r.taskName, r.dataExtracted, r.emailsSent]); });
+  const tData = state.data.marketing.breakup.reduce((s,r)=>s+(Number(r.dataExtracted)||0),0);
+  const tMail = state.data.marketing.breakup.reduce((s,r)=>s+(Number(r.emailsSent)||0),0);
+  aoa.push([], ['Total','', tData, tMail]);
+  return aoa;
+}
+
+function buildEASheet() {
+  const aoa = [['Team','Executives','Task Name','Data Extracted','Deadline','Status']];
+  state.data.ea.forEach(r => { aoa.push([r.team, r.executives, r.taskName, r.dataExtracted, r.deadline, r.status]); });
+  return aoa;
+}
+
+function buildChangeLogSheet() {
+  const aoa = [['Change Log — All User Activity'], []];
+  aoa.push(['Timestamp','User Name','User Email','Action','Table','Details','Before','After']);
+  const log = state.data.changeLog || [];
+  log.forEach(e => {
+    aoa.push([
+      e.timestamp || '',
+      e.userName || '',
+      e.userEmail || '',
+      e.action || '',
+      e.table || '',
+      e.summary || '',
+      e.before || '',
+      e.after || ''
+    ]);
+  });
+  if (log.length === 0) {
+    aoa.push(['(No changes recorded yet)', '', '', '', '', '', '', '']);
+  }
+  return aoa;
+}
+
+function buildWorkbook() {
+  const wb = XLSX.utils.book_new();
+  const wsSummary = XLSX.utils.aoa_to_sheet(buildSummarySheet());
+  wsSummary['!cols'] = [{wch:6},{wch:45},{wch:12},{wch:20},{wch:14},{wch:14},{wch:28},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+  const wsM = XLSX.utils.aoa_to_sheet(buildMarketingSheet());
+  wsM['!cols'] = [{wch:12},{wch:20},{wch:45},{wch:14},{wch:12},{wch:14},{wch:36},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, wsM, 'Marketing');
+
+  const wsEA = XLSX.utils.aoa_to_sheet(buildEASheet());
+  wsEA['!cols'] = [{wch:18},{wch:35},{wch:45},{wch:14},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, wsEA, 'EA');
+
+  const wsLog = XLSX.utils.aoa_to_sheet(buildChangeLogSheet());
+  wsLog['!cols'] = [{wch:20},{wch:18},{wch:28},{wch:10},{wch:28},{wch:60},{wch:50},{wch:50}];
+  XLSX.utils.book_append_sheet(wb, wsLog, 'Change Log');
+
+  return wb;
+}
+
+async function exportFullWorkbook() {
+  const wb = buildWorkbook();
+  XLSX.writeFile(wb, `Weekly_Report_Full_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel exported (with Change Log) ✓');
+}
+
+async function exportChangeLog() {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(buildChangeLogSheet());
+  ws['!cols'] = [{wch:20},{wch:18},{wch:28},{wch:10},{wch:28},{wch:60},{wch:50},{wch:50}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Change Log');
+  XLSX.writeFile(wb, `ChangeLog_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Change Log exported ✓');
+}
+
+async function exportTableToExcel(key) {
+  const cfg = TABLES[key];
+  const rows = getByPath(state.data, cfg.path) || [];
+  const aoa = [cfg.columns.map(c => c.label)];
+  rows.forEach(r => aoa.push(cfg.columns.map(c => r[c.key] ?? '')));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), cfg.title.slice(0,30));
+  XLSX.writeFile(wb, `${cfg.title.replace(/[^\w]+/g,'_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Table exported ✓');
+}
+
+async function generateWeeklyReport() {
+  const wb = buildWorkbook();
+  const fname = `Weekly_Report_${new Date().toISOString().slice(0,10)}.xlsx`;
+  if (state.dirHandle) {
+    try {
+      const reportsDir = await state.dirHandle.getDirectoryHandle('WeeklyReports', { create:true });
+      const fh = await reportsDir.getFileHandle(fname, { create:true });
+      const w = await fh.createWritable();
+      const data = XLSX.write(wb, { type:'array', bookType:'xlsx' });
+      await w.write(data);
+      await w.close();
+      toast('Weekly report saved ✓');
+      return;
+    } catch(e) { console.error(e); }
+  }
+  XLSX.writeFile(wb, fname);
+}
+
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify(state.data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `weekly_report_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function sendEmailFlow() {
+  const to = $('#emailTo')?.value.trim() || localStorage.getItem('weeklyReportEmail') || '';
+  if (!to) { toast('Enter recipient email'); return; }
+  const wb = buildWorkbook();
+  const fname = `Weekly_Report_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  const subject = encodeURIComponent('Weekly Report — ' + new Date().toISOString().slice(0,10));
+  const body = encodeURIComponent(`Hi,\n\nPlease find the weekly report attached.\n\nRegards,\n${state.currentUser?.name || 'Weekly Report Manager'}`);
+  window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+  toast('Report downloaded. Attach it to the email.');
+}
+
+/* ---------- MODAL & USER ---------- */
+$('#modalClose').onclick = closeModal;
+$('#modalCancel').onclick = closeModal;
+$('#modalSave').onclick = saveModal;
+$('#modalBackdrop').onclick = (e) => { if (e.target.id === 'modalBackdrop') closeModal(); };
+
+$('#btnContinue').onclick = confirmUser;
+$('#inputUserName').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#inputUserEmail').focus(); });
+$('#inputUserEmail').addEventListener('keydown', (e) => { if (e.key === 'Enter') confirmUser(); });
+$('#userBadge').onclick = () => {
+  if (confirm(`Current: ${state.currentUser?.name}\n\nChange user?`)) showUserModal(true);
+};
+
+/* ---------- START ---------- */
+init();
+</script>
+</body>
+</html>
